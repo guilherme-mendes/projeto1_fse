@@ -176,6 +176,8 @@ void r_on_off(int key)
   printf("Insira o valor do Histerese: ");
   scanf("%f", &histerese);
 
+  clear_screen();
+
   do
   {
     get_uart(fs_uart, GET_INTERNAL_TEMP);
@@ -225,8 +227,8 @@ void r_pid(int key)
   clear_screen();
   float histerese, TI, TR, TE;
   int value_ts = 0;
-  printf("+------------- PID -------------+\n");
   pid_configure_consts(5, 1, 5);
+  printf("+------------- PID -------------+\n");
   do
   {
     get_uart(fs_uart, GET_INTERNAL_TEMP);
