@@ -13,6 +13,14 @@
 #define L2 0xC0
 #define LCD_BACKLIGHT 0x08
 #define ENABLE 0b00000100
+#define ID_ON_OFF 1
+#define ID_TR 2
+#define ID_HISTERESE 3
+#define ID_KP 4
+#define ID_KI 5
+#define ID_KD 6
+#define ID_SAIR 7
+
 
 void t_enbl(int bits);
 void print_d(float tempI, float tempR, float tempE);

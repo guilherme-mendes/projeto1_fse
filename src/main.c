@@ -19,33 +19,15 @@
 #include <thermometer.h>
 #include <export.h>
 
+int fs_uart;
+int gpio_k = 1;
+
 struct bme280_dev bme_connection;
 int term = 0;
-int fs_uart;
-int key_gpio = 1;
 
 void clear_screen()
 {
   system("clear");
-}
-
-void get_uart(int filestream, unsigned char msgn)
-{
-
-  unsigned char matricula[7] = {0x01, 0x23, msgn, 0x04, 0x09, 0x01, 0x01};
-  short crc = calcula_CRC(matricula, 7);
-  unsigned char msgnn[9];
-  memcpy(msgnn, &matricula, 7);
-
-  memcpy(&msgnn[7], &crc, 2);
-
-  int cnt = write(filestream, &msgnn[0], 9);
-
-  if (cnt < 0)
-  {
-    printf("Erro na comunicação com o UART\n");
-  }
-  sleep(1);
 }
 
 Number_type uard_r(int filestream, unsigned char msgn)
@@ -104,6 +86,25 @@ int init_uart()
   return filestream;
 }
 
+void get_uart(int filestream, unsigned char msgn)
+{
+
+  unsigned char matricula[7] = {0x01, 0x23, msgn, 4, 9, 1, 2};
+  short crc = calcula_CRC(matricula, 7);
+  unsigned char msgnn[9];
+  memcpy(msgnn, &matricula, 7);
+
+  memcpy(&msgnn[7], &crc, 2);
+
+  int cnt = write(filestream, &msgnn[0], 9);
+
+  if (cnt < 0)
+  {
+    printf("Erro na comunicação com o UART\n");
+  }
+  sleep(1);
+}
+
 void encerra_sistema()
 {
   clear_screen();
@@ -121,7 +122,7 @@ void encerra_sistema()
 
 void uard_r_s(int filestream, int sign)
 {
-  unsigned char matricula[7] = {0x01, 0x16, SEND_SIGNAL, 0x04, 0x09, 0x01, 0x01};
+  unsigned char matricula[7] = {0x01, 0x16, 0xD1, 4, 9, 1, 2};
   unsigned char msgn[13];
   memcpy(msgn, &matricula, 7);
   memcpy(&msgn[7], &sign, 4);
@@ -147,16 +148,16 @@ void switch_routine()
 {
   if (term)
   {
-    if (key_gpio == 1)
+    if (gpio_k == 1)
     {
-      key_gpio = 0;
+      gpio_k = 0;
     }
     else
-      key_gpio = 1;
+      gpio_k = 1;
   }
   else
     printf("\n");
-    
+
   printf("Instrução inválida! Reinicie o sistema.\n");
 }
 
@@ -185,7 +186,7 @@ void r_on_off(int key)
     get_uart(fs_uart, GET_POTENTIOMETER);
     TR = uard_r(fs_uart, GET_POTENTIOMETER).float_value;
     TE = get_current_temperature(&bme_connection);
-    
+
     printf("+-------------------------------+\n");
     printf("+          TI: %.2f⁰C          +\n", TI);
     printf("+          TR: %.2f⁰C          +\n", TR);
@@ -212,14 +213,13 @@ void r_on_off(int key)
     if (!term)
     {
       get_uart(fs_uart, GET_KEY_VALUE);
-      key_gpio = uard_r(fs_uart, GET_KEY_VALUE).int_value;
+      gpio_k = uard_r(fs_uart, GET_KEY_VALUE).int_value;
     }
 
     uard_r_s(fs_uart, value_ts);
-  }
-  while (key_gpio == key);
+  } while (gpio_k == key);
   printf("+--------------------------------------\n");
-  r_pid(key_gpio);
+  r_pid(gpio_k);
 }
 
 void r_pid(int key)
@@ -232,7 +232,7 @@ void r_pid(int key)
   do
   {
     get_uart(fs_uart, GET_INTERNAL_TEMP);
-   
+
     TI = uard_r(fs_uart, GET_INTERNAL_TEMP).float_value;
 
     double value_ts = pid_control(TI);
@@ -240,7 +240,7 @@ void r_pid(int key)
     pwm_control(value_ts);
 
     get_uart(fs_uart, GET_POTENTIOMETER);
-   
+
     TR = uard_r(fs_uart, GET_POTENTIOMETER).float_value;
 
     pid_update_reference(TR);
@@ -257,13 +257,13 @@ void r_pid(int key)
     if (!term)
     {
       get_uart(fs_uart, GET_KEY_VALUE);
-      key_gpio = uard_r(fs_uart, GET_KEY_VALUE).int_value;
+      gpio_k = uard_r(fs_uart, GET_KEY_VALUE).int_value;
     }
 
     uard_r_s(fs_uart, value_ts);
-  } while (key_gpio == key);
+  } while (gpio_k == key);
   printf("+-------------------------------+\n");
-  r_on_off(key_gpio);
+  r_on_off(gpio_k);
 }
 
 void init()

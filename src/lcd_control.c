@@ -66,7 +66,7 @@ void print_d(float TI,float TR, float TE)
     float_type(TE);
     ln_type("TI");
     float_type(TI);
-    ln_type(" TR");
+    ln_type("TR");
     float_type(TR);
 }
 
